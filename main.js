@@ -4938,6 +4938,12 @@ function _Browser_load(url)
 		}
 	}));
 }
+var $author$project$Main$LinkClicked = function (a) {
+	return {$: 'LinkClicked', a: a};
+};
+var $author$project$Main$UrlChanged = function (a) {
+	return {$: 'UrlChanged', a: a};
+};
 var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$GT = {$: 'GT'};
 var $elm$core$Basics$LT = {$: 'LT'};
@@ -10535,121 +10541,143 @@ var $elm$core$Basics$never = function (_v0) {
 		continue never;
 	}
 };
-var $elm$browser$Browser$element = _Browser_element;
-var $author$project$Main$init = function (_v0) {
-	return _Utils_Tuple2(
-		{draft: '', messages: _List_Nil},
-		$elm$core$Platform$Cmd$none);
-};
-var $author$project$Main$Recv = function (a) {
-	return {$: 'Recv', a: a};
-};
-var $author$project$Main$messageReceiver = _Platform_incomingPort('messageReceiver', $elm$json$Json$Decode$string);
+var $elm$browser$Browser$application = _Browser_application;
+var $author$project$Main$Model = F2(
+	function (key, url) {
+		return {key: key, url: url};
+	});
+var $author$project$Main$init = F3(
+	function (flags, url, key) {
+		return _Utils_Tuple2(
+			A2($author$project$Main$Model, key, url),
+			$elm$core$Platform$Cmd$none);
+	});
+var $elm$core$Platform$Sub$batch = _Platform_batch;
+var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Main$subscriptions = function (_v0) {
-	return $author$project$Main$messageReceiver($author$project$Main$Recv);
+	return $elm$core$Platform$Sub$none;
 };
-var $author$project$Main$sendMessage = _Platform_outgoingPort('sendMessage', $elm$json$Json$Encode$string);
-var $author$project$Main$update = F2(
-	function (msg, model) {
-		switch (msg.$) {
-			case 'DraftChanged':
-				var draft = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{draft: draft}),
-					$elm$core$Platform$Cmd$none);
-			case 'Send':
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{draft: ''}),
-					$author$project$Main$sendMessage(model.draft));
-			default:
-				var message = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							messages: _Utils_ap(
-								model.messages,
-								_List_fromArray(
-									[message]))
-						}),
-					$elm$core$Platform$Cmd$none);
+var $elm$browser$Browser$Navigation$load = _Browser_load;
+var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
+var $elm$url$Url$addPort = F2(
+	function (maybePort, starter) {
+		if (maybePort.$ === 'Nothing') {
+			return starter;
+		} else {
+			var port_ = maybePort.a;
+			return starter + (':' + $elm$core$String$fromInt(port_));
 		}
 	});
-var $author$project$Main$DraftChanged = function (a) {
-	return {$: 'DraftChanged', a: a};
+var $elm$url$Url$addPrefixed = F3(
+	function (prefix, maybeSegment, starter) {
+		if (maybeSegment.$ === 'Nothing') {
+			return starter;
+		} else {
+			var segment = maybeSegment.a;
+			return _Utils_ap(
+				starter,
+				_Utils_ap(prefix, segment));
+		}
+	});
+var $elm$url$Url$toString = function (url) {
+	var http = function () {
+		var _v0 = url.protocol;
+		if (_v0.$ === 'Http') {
+			return 'http://';
+		} else {
+			return 'https://';
+		}
+	}();
+	return A3(
+		$elm$url$Url$addPrefixed,
+		'#',
+		url.fragment,
+		A3(
+			$elm$url$Url$addPrefixed,
+			'?',
+			url.query,
+			_Utils_ap(
+				A2(
+					$elm$url$Url$addPort,
+					url.port_,
+					_Utils_ap(http, url.host)),
+				url.path)));
 };
-var $author$project$Main$Send = {$: 'Send'};
-var $elm$html$Html$h1 = _VirtualDom_node('h1');
-var $elm$json$Json$Decode$andThen = _Json_andThen;
-var $elm$json$Json$Decode$fail = _Json_fail;
-var $author$project$Main$ifIsEnter = function (msg) {
+var $author$project$Main$update = F2(
+	function (msg, model) {
+		if (msg.$ === 'LinkClicked') {
+			var urlRequest = msg.a;
+			if (urlRequest.$ === 'Internal') {
+				var url = urlRequest.a;
+				return _Utils_Tuple2(
+					model,
+					A2(
+						$elm$browser$Browser$Navigation$pushUrl,
+						model.key,
+						$elm$url$Url$toString(url)));
+			} else {
+				var href = urlRequest.a;
+				return _Utils_Tuple2(
+					model,
+					$elm$browser$Browser$Navigation$load(href));
+			}
+		} else {
+			var url = msg.a;
+			return _Utils_Tuple2(
+				_Utils_update(
+					model,
+					{url: url}),
+				$elm$core$Platform$Cmd$none);
+		}
+	});
+var $elm$html$Html$b = _VirtualDom_node('b');
+var $author$project$Main$viewLink = function (path) {
 	return A2(
-		$elm$json$Json$Decode$andThen,
-		function (key) {
-			return (key === 'Enter') ? $elm$json$Json$Decode$succeed(msg) : $elm$json$Json$Decode$fail('some other key');
-		},
-		A2($elm$json$Json$Decode$field, 'key', $elm$json$Json$Decode$string));
-};
-var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
-var $author$project$Main$view = function (model) {
-	return A2(
-		$elm$html$Html$div,
+		$elm$html$Html$li,
 		_List_Nil,
 		_List_fromArray(
 			[
 				A2(
-				$elm$html$Html$h1,
+				$elm$html$Html$a,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$href(path)
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(path)
+					]))
+			]));
+};
+var $author$project$Main$view = function (model) {
+	return {
+		body: _List_fromArray(
+			[
+				$elm$html$Html$text('The current URL is: '),
+				A2(
+				$elm$html$Html$b,
 				_List_Nil,
 				_List_fromArray(
 					[
-						$elm$html$Html$text('Echo Chat')
+						$elm$html$Html$text(
+						$elm$url$Url$toString(model.url))
 					])),
 				A2(
 				$elm$html$Html$ul,
 				_List_Nil,
-				A2(
-					$elm$core$List$map,
-					function (list) {
-						return A2(
-							$elm$html$Html$li,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(list)
-								]));
-					},
-					model.messages)),
-				A2(
-				$elm$html$Html$input,
 				_List_fromArray(
 					[
-						$elm$html$Html$Attributes$type_('text'),
-						$elm$html$Html$Attributes$placeholder('draft'),
-						$elm$html$Html$Attributes$value(model.draft),
-						$elm$html$Html$Events$onInput($author$project$Main$DraftChanged),
-						A2(
-						$elm$html$Html$Events$on,
-						'keydown',
-						$author$project$Main$ifIsEnter($author$project$Main$Send))
-					]),
-				_List_Nil),
-				A2(
-				$elm$html$Html$button,
-				_List_fromArray(
-					[
-						$elm$html$Html$Events$onClick($author$project$Main$Send)
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('Send')
+						$author$project$Main$viewLink('/home'),
+						$author$project$Main$viewLink('/profile'),
+						$author$project$Main$viewLink('/reviews/the-century-of-the-self'),
+						$author$project$Main$viewLink('/reviews/public-opinion'),
+						$author$project$Main$viewLink('/reviews/shah-of-shahs')
 					]))
-			]));
+			]),
+		title: 'URL Interceptor'
+	};
 };
-var $author$project$Main$main = $elm$browser$Browser$element(
-	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
+var $author$project$Main$main = $elm$browser$Browser$application(
+	{init: $author$project$Main$init, onUrlChange: $author$project$Main$UrlChanged, onUrlRequest: $author$project$Main$LinkClicked, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{},"unions":{"Main.Msg":{"args":[],"tags":{"DraftChanged":["String.String"],"Send":[],"Recv":["String.String"]}},"String.String":{"args":[],"tags":{"String":[]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"}},"unions":{"Main.Msg":{"args":[],"tags":{"LinkClicked":["Browser.UrlRequest"],"UrlChanged":["Url.Url"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}}}}})}});}(this));

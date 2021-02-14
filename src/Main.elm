@@ -1,4 +1,4 @@
-port module Main exposing (..)
+module Main exposing (..)
 {-- Elmは初期値を画面に描画することから始まります。そこから以下のループに入ります。
 
 1. ユーザーからの入力を待ちます
@@ -15,10 +15,10 @@ port module Main exposing (..)
 --}
 
 import Browser
+import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (..)
-import Json.Decode as D
+import Url
 
 
 
@@ -27,11 +27,13 @@ import Json.Decode as D
 --   type Program flags model msg = Program
 main : Program () Model Msg
 main =
-  Browser.element
+  Browser.application
     { init = init
     , view = view
     , update = update
     , subscriptions = subscriptions
+    , onUrlChange = UrlChanged
+    , onUrlRequest = LinkClicked
     }
 
 
@@ -39,23 +41,13 @@ main =
 
 -- MODEL
 --   modelはアプリケーションが持つデータを表現している、initは初期状態の定義
---   draft = 入力された文字列
---   messages = websocketに送信されたメッセージ一覧
 type alias Model =
-    { draft : String
-    , messages : List String
-    }
+    { key : Nav.Key
+    , url : Url.Url}
 
-init : () -> ( Model, Cmd msg )
-init _ =
-  ({ draft = "", messages = [] }, Cmd.none)
-
-
-
--- PORTS
---   外部とデータを入出力するための機能
-port sendMessage : String -> Cmd msg
-port messageReceiver : (String -> msg) -> Sub msg
+init : () -> Url.Url -> Nav.Key -> (Model, Cmd Msg)
+init _ url key =
+  (Model key url , Cmd.none)
 
 
 -- UPDATE
@@ -64,21 +56,23 @@ port messageReceiver : (String -> msg) -> Sub msg
 --   update関数はMsgとModelを受け取り、新しいモデルを返す
 
 type Msg
-  = DraftChanged String
-  | Send
-  | Recv String
+  = LinkClicked Browser.UrlRequest
+  | UrlChanged Url.Url
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    DraftChanged draft ->
-      ( { model | draft = draft }, Cmd.none )
-    
-    Send ->
-      ( { model | draft = "" }, sendMessage model.draft )
-    
-    Recv message ->
-      ( { model | messages = model.messages ++ [message] }, Cmd.none )
+      LinkClicked urlRequest ->
+        case urlRequest of
+          Browser.Internal url ->
+            ( model, Nav.pushUrl model.key (Url.toString url))
+          
+          Browser.External href ->
+            ( model, Nav.load href)
+
+      UrlChanged url ->
+        ( { model | url = url }, Cmd.none )
+
 
 
 
@@ -86,7 +80,7 @@ update msg model =
 --   外部からの情報を定期的に待ち受けるという意味
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    messageReceiver Recv
+    Sub.none
 
 
 
@@ -95,26 +89,20 @@ subscriptions _ =
 -- VIEW
 --   view関数は画面にModelの内容を表示する関数
 --   view関数はModelを受け取り、Html msgを返す
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
-  div []
-      [ h1 [] [ text "Echo Chat"]
+  { title = "URL intercepter"
+  , body =
+      [ text "The CurrentLink Is"
+      , b [] [ text (Url.toString model.url)]
       , ul []
-           (List.map (\list -> li [] [ text list ]) model.messages )
-      , input
-          [ type_ "text"
-          , placeholder "draft"
-          , value model.draft
-          , onInput DraftChanged
-          , on "keydown" (ifIsEnter Send)
+          [
+            linkContainer "/home"
+          , linkContainer "/unko"
           ]
-          []
-      , button [ onClick Send ] [ text "Send" ]
       ]
+  }
 
-
--- Enter入力を検出してデコードする関数
-ifIsEnter : msg -> D.Decoder msg
-ifIsEnter msg =
-  D.field "key" D.string
-    |> D.andThen (\key -> if key == "Enter" then D.succeed msg else D.fail "some other key")
+linkContainer : String -> Html msg
+linkContainer path =
+  li [] [ a [ href path ] [ text path ] ]
