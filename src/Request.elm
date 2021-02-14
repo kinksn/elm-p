@@ -96,6 +96,7 @@ update msg model =
 
 
 -- SUBSCRIPTIONS
+-- 外部からの情報を定期的に待ち受けるという意味
 subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.none
